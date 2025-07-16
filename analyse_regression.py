@@ -24,6 +24,9 @@ infoTag    = """***Info: """
 # String to indicate the name of the repository:
 repoName = "mcip"
 
+# String to indicate the base directory of the scratch folder:
+pathToScratchArea = "/lan/dscratch/"
+
 # Standard help & error messages
 optionalArgsMsg = """
 --config <name_of_config>: The script will only analyse the regression results corresponding
@@ -63,7 +66,8 @@ The {repoName} repository can't be found."""
 scriptOpeningMsg = """
 \n\n\t================================================================================
 \t\t Running {} to Analyse the Regression Results
-\t================================================================================"""
+\t================================================================================
+"""
 
 # End print-out message
 jobDoneMsg = """
@@ -124,8 +128,20 @@ if __name__ == "__main__":
         fastSearchRequested = True
         print(fastSearchRequestedMsg)
 
+    # ==== Step 4: Get the User's Name ====
+    userName = os.environ.get('USERNAME')
+
+    # ==== Step 5: Extract the Segment of the Path between /home/<user>/ and the Repo itself ====
+    # Reverse the split up path (PWD or CWD) and find the first
+    # instance of the repository name. This will correspond to the last
+    # instance of the repository name in the original, non-reversed list.
+    cwdSplitUpAndReversed = list(reversed(cwdSplitUp))
+    positionOfRepoInPath = len(cwdSplitUp) - cwdSplitUpAndReversed.index(repoName) - 1
+    positionOfUserNameInPath = cwdSplitUp.index(userName)
+    pathFromScratchBaseArea = cwdSplitUp[positionOfUserNameInPath:positionOfRepoInPath]
     exit()
-    indexOfReposFolder = 0
+    # ==== Step 6: Change Directory to the Scratch Folder with the Results ====
+
     if (pathContainsRepo):
         cwdSplitUpReversed = list(reversed(cwdSplitUp))
         indexOfReposFolder = cwdSplitUpReversed.index(repoName)
