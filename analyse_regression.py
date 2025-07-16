@@ -60,6 +60,12 @@ wrongDirectoryMsg = errorTag + f"""The script appears to have been called from t
 The {repoName} repository can't be found."""
 
 # End print-out message
+scriptOpeningMsg = """
+\n\n\t================================================================================
+\t\t Running {} to Analyse the Regression Results
+\t================================================================================"""
+
+# End print-out message
 jobDoneMsg = """
 \n\n\t===========================================================================
 \t\tAdditionally, you can see the regression analysis below!
@@ -80,6 +86,10 @@ def parsingArguments():
     return parser.parse_args()
 
 if __name__ == "__main__":
+    # ==== Preliminary Step: Print an Opening (Start) Message ====
+    scriptName = "analyse_regression.py"
+    print(scriptOpeningMsg.format(scriptName))
+
     # ==== Step 1: Get the Path to the Current Work Directory (CWD) ====
     cwd = os.getcwd()
 
@@ -124,7 +134,3 @@ if __name__ == "__main__":
     reposFolderName = cwdSplitUpReversed[indexOfReposFolder]
     userName = os.environ.get('USERNAME')
     scratchDirBaseName = f"/lan/{userName}/{reposFolderName}/"
-    print(cwdSplitUp)
-    print(reposFolderName)
-    print(scratchDirBaseName)
-    exit()
