@@ -27,6 +27,9 @@ repoName = "mcip"
 # String to indicate the base directory of the scratch folder:
 pathToScratchBaseArea = "/lan/dscratch"
 
+# String indicating the start pattern which is common to all the configurations:
+configNameStartPattern = "cadence."
+
 # Standard help & error messages
 optionalArgsMsg = """
 --config <name_of_config>: The script will only analyse the regression results corresponding
@@ -57,6 +60,9 @@ fastSearchRequestedMsg = infoTag + """A fast search has been requested on the co
 verbosityEnabledMsg = infoTag + """Verbosity has been enabled from the command line."""
 pathDoesNotExistMsg = errorTag + """The directory below does not exist:
 {}
+"""
+configFoundMsg = infoTag + """The {} config has been located!"""
+numConfigsFoundMsg = infoTag + """{} configs were found in the results area. They are:
 """
 
 # Error messages:
@@ -153,18 +159,40 @@ if __name__ == "__main__":
     # ==== Step 6: Form the Path to the Scratch Folder with the Results ====
     pathToConfigs = f"{repoName}/mem/"
     pathToScratchArea = pathToScratchBaseArea + pathBetweenHomeDirectoryAndRepo + pathToConfigs
-    # Also, if the path formed does not exist, notify the user and exit:
+    # Also, check if the path exists. If it doesn't, alert the
+    # user and exit:
+    pathToScratchArea = "./mem" # temporarily doing this so that I can continue testing as I write the script
     if not os.path.isdir(pathToScratchArea):
         print(pathDoesNotExistMsg.format(pathToScratchArea))
         exit()
-    exit()
-    # ==== Step 6: Change Directory to the Scratch Folder with the Results ====
 
-    if (pathContainsRepo):
-        cwdSplitUpReversed = list(reversed(cwdSplitUp))
-        indexOfReposFolder = cwdSplitUpReversed.index(repoName)
-        if indexOfReposFolder != (len(cwdSplitUpReversed) - 1):
-            indexOfReposFolder = indexOfReposFolder + 1
-    reposFolderName = cwdSplitUpReversed[indexOfReposFolder]
-    userName = os.environ.get('USERNAME')
-    scratchDirBaseName = f"/lan/{userName}/{reposFolderName}/"
+    # ==== Step 6: Change Directory to the Scratch Folder with the Results ====
+    os.chdir(pathToScratchArea)
+
+    # ==== Step 7: If the User has Specified a Config, Check that it Exists ====
+    if configSupplied:
+        if not os.path.isdir(configName):
+            print(noSuchConfigMsg.format(configName))
+            exit()
+        elif verbosityEnabled:
+            print(configFoundMsg.format(configName))
+
+    # ==== Step 8: Gather all of the Config Names into a List ====
+    configNames = [] # an empty list at the moment
+    if configSupplied:
+        configNames.append(configName)
+    else:
+        configNames = [folderName for folderName in os.listdir() if folderName.startswith(configNameStartPattern)]
+
+    numConfigsFound = len(configNames)
+    # If the user hasn't specified a configuration on the command
+    # line and they have enabled verbosity, then inform them of
+    # how many configurations were found and list them:
+    if verbosityEnabled and not configSupplied:
+        print(numConfigsFoundMsg.format(numConfigsFound))
+        for name in configNames:
+            print(name)
+
+    # ==== Step 9: Define the Regular Expressions which We Need ====
+
+    exit()
