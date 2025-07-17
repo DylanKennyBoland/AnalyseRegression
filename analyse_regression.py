@@ -25,7 +25,7 @@ infoTag    = """***Info: """
 repoName = "mcip"
 
 # String to indicate the base directory of the scratch folder:
-pathToScratchArea = "/lan/dscratch/"
+pathToScratchBaseArea = "/lan/dscratch"
 
 # Standard help & error messages
 optionalArgsMsg = """
@@ -55,6 +55,9 @@ fileReadSuccess = successTag + """The log file at {} was read in successfully.""
 configSuppliedMsg = infoTag + """The following configuration has been supplied on the command line: {}"""
 fastSearchRequestedMsg = infoTag + """A fast search has been requested on the command line."""
 verbosityEnabledMsg = infoTag + """Verbosity has been enabled from the command line."""
+pathDoesNotExistMsg = errorTag + """The directory below does not exist:
+{}
+"""
 
 # Error messages:
 noSuchConfigMsg = errorTag + """The config '{}' could not be located - double-check the name."""
@@ -97,8 +100,11 @@ if __name__ == "__main__":
     # ==== Step 1: Get the Path to the Current Work Directory (CWD) ====
     cwd = os.getcwd()
 
-    # ==== Step 2: Get the Name of the Folder in which the Repository is Cloned ====
-    cwdSplitUp = cwd.split("\\") # Split the path to the current working directory up
+    # ==== Step 2: Check that the Repo is Somewhere on the Path ====
+    # Split up the path to the current working directory by removing
+    # the "\" characters. The various folder names will be put into
+    # a list:
+    cwdSplitUp = cwd.split("\\")
 
     # Check if some segment of the path *is* the name of the repository:
     pathContainsRepo = repoName in cwdSplitUp
@@ -138,7 +144,19 @@ if __name__ == "__main__":
     cwdSplitUpAndReversed = list(reversed(cwdSplitUp))
     positionOfRepoInPath = len(cwdSplitUp) - cwdSplitUpAndReversed.index(repoName) - 1
     positionOfUserNameInPath = cwdSplitUp.index(userName)
-    pathFromScratchBaseArea = cwdSplitUp[positionOfUserNameInPath:positionOfRepoInPath]
+    foldersBetweenHomeDirectoryAndRepo = cwdSplitUp[positionOfUserNameInPath:positionOfRepoInPath]
+    # Reinsert the path delimiters (\) in order to form a valid path:
+    pathBetweenHomeDirectoryAndRepo = "/"
+    for folder in foldersBetweenHomeDirectoryAndRepo:
+        pathBetweenHomeDirectoryAndRepo += folder + "/"
+
+    # ==== Step 6: Form the Path to the Scratch Folder with the Results ====
+    pathToConfigs = f"{repoName}/mem/"
+    pathToScratchArea = pathToScratchBaseArea + pathBetweenHomeDirectoryAndRepo + pathToConfigs
+    # Also, if the path formed does not exist, notify the user and exit:
+    if not os.path.isdir(pathToScratchArea):
+        print(pathDoesNotExistMsg.format(pathToScratchArea))
+        exit()
     exit()
     # ==== Step 6: Change Directory to the Scratch Folder with the Results ====
 
