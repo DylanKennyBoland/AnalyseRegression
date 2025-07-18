@@ -64,6 +64,9 @@ pathDoesNotExistMsg = errorTag + """The directory below does not exist:
 configFoundMsg = infoTag + """The {} config has been located!"""
 numConfigsFoundMsg = infoTag + """{} configs were found in the results area. They are:
 """
+analysingConfigMsg = infoTag + """Analysing the results for {}."""
+noResultsForConfigMsg = infoTag + """There are no 'run_<seed_number>' directories for {}."""
+runDirsForConfigMsg = infoTag + """There are {} 'run_<seed_number>' directories for {}."""
 
 # Error messages:
 noSuchConfigMsg = errorTag + """The config '{}' could not be located - double-check the name."""
@@ -194,5 +197,46 @@ if __name__ == "__main__":
             print(name)
 
     # ==== Step 9: Define the Regular Expressions which We Need ====
+    # TODO: This is the tricky part!
+
+    # ==== Step 10: Get the Results for Each Configuration ====
+    # In each test result directory, there will be a log file for us
+    # to check. Let's define the format of the file name below:
+    logFileName = "seed{}_ius.log.LSFlog.gz"
+    # Also, if the user has requested for a "fast check" or
+    # "fast analysis", then we will search the "status" file instead
+    # of the log file:
+    if fastSearchRequested:
+        logFileName = "status_is."
+
+    # All the test result directories will start with:
+    # "run_". Define this as the start pattern for
+    # a result directory:
+    runFolderStartPattern = "run_"
+
+    # Iterate over the configurations:
+    for config in configNames:
+        # Change in the configuration's directory:
+        os.chdir(config)
+        if verbosityEnabled:
+            print(analysingConfigMsg.format(config))
+
+        # Gather all of the "run_<seed_number>" directories into a list:
+        runDirs = [folderName for folderName in os.listdir() if folderName.startswith(runFolderStartPattern)]
+        # Get the number of "run" folders:
+        numRunDirs = len(runDirs)
+        # Check if there were no run (result) directories found.
+        # If there weren't, alert the user, and continue onto the
+        # next configuration (if there is another):
+        if numRunDirs == 0:
+            print(noResultsForConfigMsg.format(config))
+            os.chdir("../")
+            continue
+        # If the user has enabled verbosity, inform them of how
+        # many run directories were found for the given configuration:
+        if verbosityEnabled:
+            print(runDirsForConfigMsg.format(numRunDirs, config))
+
+        os.chdir("../")
 
     exit()
