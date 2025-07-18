@@ -67,6 +67,7 @@ numConfigsFoundMsg = infoTag + """{} configs were found in the results area. The
 analysingConfigMsg = infoTag + """Analysing the results for {}."""
 noResultsForConfigMsg = infoTag + """There are no 'run_<seed_number>' directories for {}."""
 runDirsForConfigMsg = infoTag + """There are {} 'run_<seed_number>' directories for {}."""
+analysingRunDirMsg = infoTag + """Analysing {}."""
 
 # Error messages:
 noSuchConfigMsg = errorTag + """The config '{}' could not be located - double-check the name."""
@@ -202,12 +203,12 @@ if __name__ == "__main__":
     # ==== Step 10: Get the Results for Each Configuration ====
     # In each test result directory, there will be a log file for us
     # to check. Let's define the format of the file name below:
-    logFileName = "seed{}_ius.log.LSFlog.gz"
+    logFileNamePattern = "seed{}_ius.log.LSFlog.gz"
     # Also, if the user has requested for a "fast check" or
     # "fast analysis", then we will search the "status" file instead
     # of the log file:
     if fastSearchRequested:
-        logFileName = "status_is."
+        logFileNamePattern = "status_is."
 
     # All the test result directories will start with:
     # "run_". Define this as the start pattern for
@@ -236,6 +237,34 @@ if __name__ == "__main__":
         # many run directories were found for the given configuration:
         if verbosityEnabled:
             print(runDirsForConfigMsg.format(numRunDirs, config))
+
+        # ==== Iterate through the Run (Result) Directories ====
+        for runDir in runDirs:
+            # Change into the run directory:
+            os.chdir(runDir)
+
+            # Get the seed number from the run directory's name.
+            # Do this by removing the 'run_' part of the name:
+            seedNumber = runDir.replace(runFolderStartPattern, '')
+
+            # Check if the log file or status file is present:
+            if fastSearchRequested:
+                statusFileFound = False
+                if os.path.isdir(logFileNamePattern + "GOOD"):
+                    statusFileFound = True
+                    logFileName = logFileNamePattern + "GOOD"
+                elif os.path.isdir(logFileNamePattern + "BAD"):
+                    statusFileFound = True
+                    logFileName = logFileNamePattern + "BAD"
+                elif os.path.isdir(logFileNamePattern + "UNK"):
+                    statusFileFound = True
+                    logFileName = logFileNamePattern + "BAD"
+
+            # If verbosity is enabled, alert the user of which
+            # run (or seed) we are analsying:
+            if verbosityEnabled:
+                print(analysingRunDirMsg.format(runDir))
+
 
         os.chdir("../")
 
