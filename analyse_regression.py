@@ -67,7 +67,13 @@ numConfigsFoundMsg = infoTag + """{} configs were found in the results area. The
 analysingConfigMsg = infoTag + """Analysing the results for {}."""
 noResultsForConfigMsg = infoTag + """There are no 'run_<seed_number>' directories for {}."""
 runDirsForConfigMsg = infoTag + """There are {} 'run_<seed_number>' directories for {}."""
-analysingRunDirMsg = infoTag + """Analysing {}."""
+analysingRunDirMsg = infoTag + """Analysing {} for {}."""
+runPassedMsg = infoTag + """{} for {} passed!"""
+logFileNotFoundMsg = infoTag + """The log file for {} was not found."""
+statusFileNotFoundMsg = infoTag + """The status file for {} was not found."""
+checkingForStatusFileMsg = infoTag + """Checking if there is a 'status' file for {}."""
+checkingForLogFileMsg = infoTag + """Checking if there is a log file for {}."""
+noLogOrStatusFileFoundMsg = infoTag + """No log or status file was found for {}."""
 
 # Error messages:
 noSuchConfigMsg = errorTag + """The config '{}' could not be located - double-check the name."""
@@ -207,8 +213,7 @@ if __name__ == "__main__":
     # Also, if the user has requested for a "fast check" or
     # "fast analysis", then we will search the "status" file instead
     # of the log file:
-    if fastSearchRequested:
-        logFileNamePattern = "status_is."
+    statusFileNamePattern = "status_is."
 
     # All the test result directories will start with:
     # "run_". Define this as the start pattern for
@@ -243,29 +248,70 @@ if __name__ == "__main__":
             # Change into the run directory:
             os.chdir(runDir)
 
+            # Quickly check if there is a "status_is.GOOD" file
+            # present. If there is, then it means there were no
+            # errors for this test (seed):
+            if os.path.isfile(statusFileNamePattern + "GOOD"):
+                if verbosityEnabled:
+                    print(runPassedMsg.format(runDir, config))
+                # Go back up one directory before moving onto
+                # the next run (seed):
+                os.chdir("../")
+                continue # continue and check the next run (seed)
+
             # Get the seed number from the run directory's name.
             # Do this by removing the 'run_' part of the name:
             seedNumber = runDir.replace(runFolderStartPattern, '')
 
             # Check if the log file or status file is present:
+            logFileFound = False
             if fastSearchRequested:
-                statusFileFound = False
-                if os.path.isdir(logFileNamePattern + "GOOD"):
-                    statusFileFound = True
-                    logFileName = logFileNamePattern + "GOOD"
-                elif os.path.isdir(logFileNamePattern + "BAD"):
-                    statusFileFound = True
-                    logFileName = logFileNamePattern + "BAD"
-                elif os.path.isdir(logFileNamePattern + "UNK"):
-                    statusFileFound = True
-                    logFileName = logFileNamePattern + "BAD"
+                if os.path.isfile(statusFileNamePattern + "BAD"):
+                    logFileFound = True
+                    logFileName = statusFileNamePattern + "BAD"
+                elif os.path.isfile(statusFileNamePattern + "UNK"):
+                    logFileFound = True
+                    logFileName = statusFileNamePattern + "UNK"
+                else:
+                    print(statusFileNotFoundMsg.format(runDir))
+                    print(checkingForLogFileMsg.format(runDir))
+                    if os.path.isfile(logFileNamePattern.format(seedNumber)):
+                        logFileFound = True
+                        logFileName = logFileNamePattern.format(seedNumber)
+            else:
+                logFileFound = True
+                logFileName = logFileNamePattern.format(seedNumber)
+                if not os.path.isfile(logFileName):
+                    logFileFound = False
+                    print(logFileNotFoundMsg.format(runDir))
+                    print(checkingForStatusFileMsg.format(runDir))
+                    # Check if there is a "status" file which we
+                    # can search instead:
+                    if os.path.isfile(statusFileNamePattern + "BAD"):
+                        logFileName = statusFileNamePattern + "BAD"
+                        logFileFound = True
+                    elif os.path.isfile(statusFileNamePattern + "UNK"):
+                        logFileName = statusFileNamePattern + "UNK"
+                        logFileFound = True
+            if not logFileFound:
+                print(noLogOrStatusFileFoundMsg.format(runDir))
+                # Go back up one directory before moving onto
+                # the next run (seed):
+                os.chdir("../")
+                # Continue and check the next run (seed):
+                continue
 
             # If verbosity is enabled, alert the user of which
             # run (or seed) we are analsying:
             if verbosityEnabled:
-                print(analysingRunDirMsg.format(runDir))
+                print(analysingRunDirMsg.format(logFileName, runDir))
 
+            # Go back up one directory and check the next
+            # run (seed) folder (if there are any left):
+            os.chdir("../")
 
+        # Go up one directory to check the results for the next
+        # configuration, if there is another:
         os.chdir("../")
 
     exit()
